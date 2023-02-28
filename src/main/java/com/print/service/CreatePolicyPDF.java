@@ -159,12 +159,11 @@ public class CreatePolicyPDF {
 	    	JSONObject setDetail = new JSONObject();
     		setDetail = (JSONObject)scheduleMap.get(i);
 	    	int copyPage =  Integer.parseInt(setDetail.get("pageCopy").toString());
-	    	int formPage = Integer.parseInt(setDetail.get("formPage").toString()); 
-	    	
+	    
 	    	for(int j = 0; j < copyPage ; j++) {	    		  		
 	    		 
 		    	reader = new PdfReader(baos.toByteArray());
-		   	 	copy.addPage(copy.getImportedPage(reader,formPage)); // Choose page 
+		   	 	copy.addPage(copy.getImportedPage(reader,1)); // Choose page 
 		   	 	copy.freeReader(reader);
 		   	 	reader.close();        
 	        }     
