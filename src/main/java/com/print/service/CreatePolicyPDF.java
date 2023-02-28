@@ -32,12 +32,14 @@ import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.PageSize;
+import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.AcroFields;
 import com.itextpdf.text.pdf.Barcode;
 import com.itextpdf.text.pdf.Barcode128;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.DeviceNColor;
 import com.itextpdf.text.pdf.PdfAnnotation;
+import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfCopy;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
@@ -147,7 +149,7 @@ public class CreatePolicyPDF {
 		fields.setGenerateAppearances(true);
         stamper.setFormFlattening(true);
             
-		setNameField(fields,detailMap);	
+		setNameField(fields, stamper, detailMap);	
   
 	    stamper.close();		  
 	    
@@ -171,7 +173,7 @@ public class CreatePolicyPDF {
     	baos.close();      	
      }
 	
-	protected void setNameField(AcroFields fields,Map<String, String> data) throws IOException, DocumentException {
+	protected void setNameField(AcroFields fields, PdfStamper stamper, Map<String, String> data) throws IOException, DocumentException {
         // Set font size.
 		
 		final BaseFont font = BaseFont.createFont(fontbase, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
@@ -188,14 +190,47 @@ public class CreatePolicyPDF {
 			
 			
 			//System.out.println(fieldType);
+			if (data.containsKey(fieldName)) {
+				
+				
+				if(fieldType==1) {				
+					
+					String[] sentences = fieldName.split("\\_");  		
+					System.out.println(sentences[0] + " "+ fieldName);
+					if(sentences[0].equals("img"))setImgField(fields, stamper, fieldName,data.get(fieldName));
+					else if(sentences[0].equals("barcode"))setBarcode(fields,stamper ,fieldName,data.get(fieldName)); //"barcode"
+					else if(sentences[0].equals("qrcode"))setQRCode(fields, stamper, fieldName,data.get(fieldName)); // qrcode
 			
+				}else if(fieldType==4) {
+				
+					Rectangle rect = fields.getFieldPositions(fieldName).get(0).position;		    	    
+					
+					PdfContentByte over = stamper.getOverContent(1);
+					over.beginText();
+					over.setFontAndSize(font, 12);// set font and size
+					over.setColorFill(BaseColor.BLACK);// set color text
+
+					String[] sentences = fieldName.split("\\_");
+					if(sentences[0].equals("txtleft")) {						
+						over.showTextAligned(PdfContentByte.ALIGN_LEFT, data.get(fieldName), rect.getLeft(), rect.getBottom(), 0);	
+					}else if(sentences[0].equals("txtrigth")) {	
+						over.showTextAligned(PdfContentByte.ALIGN_RIGHT, data.get(fieldName), rect.getRight(), rect.getBottom(), 0);				
+					}else if(sentences[0].equals("txtcenter")) {	
+						over.showTextAligned(PdfContentByte.ALIGN_CENTER, data.get(fieldName), rect.getLeft()+((rect.getWidth()/2)), rect.getBottom(), 0);			
+					}					
+					over.endText();	
+
+	    		}
+			}
+		
+			/*
 			if(fieldType==1) {				
 				
 				String[] sentences = fieldName.split("\\_");  		
 				//System.out.println(sentences[0] + " "+ fieldName);
-				if(sentences[0].equals("head"))setImgField(fields,fieldName,data.get(fieldName));
-				else if(sentences[0].equals("barcode"))setBarcode(fields,fieldName,data.get(fieldName)); //"barcode"
-				else if(sentences[0].equals("qrcode"))setQRCode(fields,fieldName,data.get(fieldName)); // qrcode
+				if(sentences[0].equals("img"))setImgField(fields, stamper, fieldName, data.get(fieldName));
+				else if(sentences[0].equals("barcode"))setBarcode(fields, stamper, fieldName, data.get(fieldName)); //"barcode"
+				else if(sentences[0].equals("qrcode"))setQRCode(fields,fieldName, data.get(fieldName)); // qrcode
 		
 			}else if(fieldType==4) {
 				
@@ -209,59 +244,68 @@ public class CreatePolicyPDF {
 			
 				
     		}
+    		*/
 		}
 
      }
-		protected void  setImgField(AcroFields fields,String field,String value) {
-			
-			
-	    	try {
-	    		
-	    		PushbuttonField ad = fields.getNewPushbuttonFromField(field);
-	        	ad.setLayout(PushbuttonField.LAYOUT_ICON_ONLY);
-	        
-	        	ad.setBackgroundColor(null);
-	        	ad.setBorderColor(null);
-	        	ad.setIconFitToBounds(true);
-	        	ad.setScaleIcon(100);
-	        	ad.setProportionalIcon(false);
-	        	Image img = Image.getInstance(value);
-	        	img.setTransparency(new int[] { 0xF0, 0xFF });
-				ad.setImage(img);
-				fields.replacePushbuttonField(field, ad.getField());
-			} catch (BadElementException | IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (DocumentException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	    	
-
-	     }
+	
+	
+	protected void  setImgField(AcroFields fields, PdfStamper stamper ,String field,String value) {	
+	
 		
+    	try {    		
+    		
+    		Rectangle rect = fields.getFieldPositions(field).get(0).position;
+    	    float left   = rect.getLeft();
+    	    float width  = rect.getWidth();
+    	    float height = rect.getHeight();
+    		
+    		Image img = Image.getInstance(value);  		
+    		img.scaleAbsolute(width,height);
+
+    		
+    		img.setAbsolutePosition(left, rect.getBottom());
+    		PdfContentByte canvas = stamper.getOverContent(1);
+    		canvas.addImage(img);    		
+    		
+		} catch (BadElementException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (DocumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+
+     }
 		
 	    
-	    protected void setBarcode(AcroFields fields,String field,String value ) {  
+	    protected void setBarcode(AcroFields fields,PdfStamper stamper, String field,String value ) {  
 
 	        Barcode128  barcode = new Barcode128();
 	        //barcode.setBaseline(-1); //text to top
 	        //final BaseFont font = BaseFont.createFont(fontbase1, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
 	       // barcode.setFont(font);  //null removes the printed text under the barcode
-	        barcode.setBarHeight(10f); // great! but what about width???
+	        barcode.setBarHeight(12f); // great! but what about width???
 	        //barcode.setSize(9f);
-	        barcode.setX(-1f); 
+	        barcode.setX(1f); 
 	        //barcode.setFont(null);
 	        barcode.setCodeType(Barcode.CODE128);
 	        barcode.setCode(value);     
 
 		    try {
-		    	PushbuttonField  ad = fields.getNewPushbuttonFromField(field);
-				ad.setLayout(PushbuttonField.LAYOUT_ICON_ONLY); 
-	        	ad.setIconFitToBounds(true);	        
-	        	ad.setProportionalIcon(false);
-				ad.setImage(Image.getInstance(barcode.createAwtImage(Color.BLACK, Color.WHITE), null, true));
-				fields.replacePushbuttonField(field, ad.getField());
+		    	Rectangle rect = fields.getFieldPositions(field).get(0).position;
+	    	    float left   = rect.getLeft();
+	    	    float width  = rect.getWidth();
+	    	    float height = rect.getHeight();
+	    		
+	    		Image img = Image.getInstance(value);  		
+	    		img.scaleAbsolute(width,height);
+
+	    		
+	    		img.setAbsolutePosition(left, rect.getBottom());
+	    		PdfContentByte canvas = stamper.getOverContent(1);
+	    		canvas.addImage(img);    
 			} catch (BadElementException | IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -274,7 +318,7 @@ public class CreatePolicyPDF {
 	               
 	    }
 	    
-	    protected void setQRCode(AcroFields fields,String field,String value ) {  
+	    protected void setQRCode(AcroFields fields, PdfStamper stamper, String field,String value ) {  
 	    
 	    	Map<EncodeHintType, Object> hashMap = new EnumMap<EncodeHintType, Object>(EncodeHintType.class); 
 	    	hashMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
@@ -310,14 +354,20 @@ public class CreatePolicyPDF {
 				//ByteArrayOutputStream bos = new ByteArrayOutputStream();
 				//ImageIO.write(qrImg, "gif", bos);
 				
-				PushbuttonField ad = fields.getNewPushbuttonFromField(field);
-				ad.setLayout(PushbuttonField.LAYOUT_ICON_ONLY); 
-				
-	        	ad.setProportionalIcon(false);
+				Rectangle rect = fields.getFieldPositions(field).get(0).position;
+	    	    float left   = rect.getLeft();
+	    	    float width  = rect.getWidth();
+	    	    float height = rect.getHeight();
+	    		
+	    		Image img = Image.getInstance(value);  		
+	    		img.scaleAbsolute(width,height);
 
-				ad.setImage(Image.getInstance(qrImg,null));
-				fields.replacePushbuttonField(field, ad.getField()); 
+	    		
+	    		img.setAbsolutePosition(left, rect.getBottom());
+	    		PdfContentByte canvas = stamper.getOverContent(1);
+	    		canvas.addImage(img);    
 				hashMap.clear();
+
 			} catch (BadElementException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
