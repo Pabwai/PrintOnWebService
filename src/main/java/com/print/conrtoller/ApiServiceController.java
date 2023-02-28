@@ -26,10 +26,8 @@ public class ApiServiceController {
 
 		
 		JSONObject dataJson = new JSONObject(request);
-		
-		byte[] bytePDF = createPolicyPDF.setFilePDF(dataJson);
 
-		return new ResponseEntity<String>(Base64.encodeBase64String(bytePDF), HttpStatus.OK); 
+		return new ResponseEntity<String>(Base64.encodeBase64String(createPolicyPDF.setFilePDF(dataJson)), HttpStatus.OK); 
 		
 		
 	}

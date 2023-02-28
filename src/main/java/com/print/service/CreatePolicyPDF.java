@@ -39,6 +39,8 @@ import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.DeviceNColor;
 import com.itextpdf.text.pdf.PdfAnnotation;
 import com.itextpdf.text.pdf.PdfCopy;
+import com.itextpdf.text.pdf.PdfFormField;
+import com.itextpdf.text.pdf.PdfImportedPage;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
 import com.itextpdf.text.pdf.PushbuttonField;
@@ -85,7 +87,7 @@ public class CreatePolicyPDF {
 			document.close();
 		    copy.close();
 		    byte[] setData = bos.toByteArray();
-		    //bos.close();
+		    bos.close();
 		    //FileOutputStream fileOutputStream = new FileOutputStream(fileout);
 	    	//bos.writeTo(fileOutputStream);
 	    	//bos.close();
@@ -150,24 +152,25 @@ public class CreatePolicyPDF {
 		setNameField(fields,detailMap);	
   
 	    stamper.close();		  
-	    
+	    //stamper.setFormFlattening(true);
 	    
 	    for(int i = 0; i < scheduleMap.length() ; i++) {
 	    	
-	    	JSONObject setDetail = new JSONObject();
-    		setDetail = (JSONObject)scheduleMap.get(i);
+	    	JSONObject setDetail  = (JSONObject)scheduleMap.get(i);
 	    	int copyPage =  Integer.parseInt(setDetail.get("pageCopy").toString());
 	    	int formPage = Integer.parseInt(setDetail.get("formPage").toString()); 
 	    	
 	    	for(int j = 0; j < copyPage ; j++) {	    		  		
 	    		 
-		    	reader = new PdfReader(baos.toByteArray());
-		   	 	copy.addPage(copy.getImportedPage(reader,formPage)); // Choose page 
-		   	 	copy.freeReader(reader);
-		   	 	reader.close();        
+	    		PdfReader readercop = new PdfReader(baos.toByteArray());
+		    	PdfImportedPage importedPage = copy.getImportedPage(readercop, formPage);
+		    	copy.addPage(importedPage);
+		    	readercop.close();     
+		    	//copy.freeReader(readercop);
 	        }     
         }	   
-	    
+	    //copy.freeReader(reader);
+	    reader.close();   
     	baos.close();      	
      }
 	
@@ -190,10 +193,10 @@ public class CreatePolicyPDF {
 			//System.out.println(fieldType);
 			
 			if(fieldType==1) {				
-				
-				String[] sentences = fieldName.split("\\_");  		
+				String fill = data.get(fieldName);
+				String[] sentences = fill.split("\\_");  		
 				//System.out.println(sentences[0] + " "+ fieldName);
-				if(sentences[0].equals("head"))setImgField(fields,fieldName,data.get(fieldName));
+				if(sentences[0].equals("img"))setImgField(fields,fieldName,data.get(fieldName));
 				else if(sentences[0].equals("barcode"))setBarcode(fields,fieldName,data.get(fieldName)); //"barcode"
 				else if(sentences[0].equals("qrcode"))setQRCode(fields,fieldName,data.get(fieldName)); // qrcode
 		
@@ -201,8 +204,8 @@ public class CreatePolicyPDF {
 				
 				//System.out.println(fieldName);
 				fields.setFieldProperty(fieldName, "textfont", font, null);    	
-    	    	fields.setFieldProperty(fieldName, "textsize", 12f, null);
-    	    	fields.setFieldProperty(fieldName, "fflags", PdfAnnotation.FLAGS_HIDDEN, null);	 
+    	    	fields.setFieldProperty(fieldName, "textsize", 12f, null); 
+    	    	fields.setFieldProperty(fieldName, "fflags", PdfFormField.FLAGS_INVISIBLE, null);	 
     	    	fields.setFieldProperty(fieldName, "bgcolor", Color.TRANSLUCENT, null);
     	    	fields.setFieldProperty(fieldName, "bordercolor", Color.TRANSLUCENT, null);
     			fields.setField(fieldName,data.get(fieldName));
@@ -258,7 +261,9 @@ public class CreatePolicyPDF {
 		    try {
 		    	PushbuttonField  ad = fields.getNewPushbuttonFromField(field);
 				ad.setLayout(PushbuttonField.LAYOUT_ICON_ONLY); 
-	        	ad.setIconFitToBounds(true);	        
+	        	ad.setIconFitToBounds(true);
+	        	ad.setBackgroundColor(null);
+	        	ad.setBorderColor(null);
 	        	ad.setProportionalIcon(false);
 				ad.setImage(Image.getInstance(barcode.createAwtImage(Color.BLACK, Color.WHITE), null, true));
 				fields.replacePushbuttonField(field, ad.getField());
