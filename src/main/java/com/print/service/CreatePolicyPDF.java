@@ -5,9 +5,9 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -18,7 +18,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
 import com.google.zxing.BarcodeFormat;
@@ -37,13 +36,10 @@ import com.itextpdf.text.pdf.AcroFields;
 import com.itextpdf.text.pdf.Barcode;
 import com.itextpdf.text.pdf.Barcode128;
 import com.itextpdf.text.pdf.BaseFont;
-import com.itextpdf.text.pdf.DeviceNColor;
-import com.itextpdf.text.pdf.PdfAnnotation;
 import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfCopy;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
-import com.itextpdf.text.pdf.PushbuttonField;
 import com.itextpdf.text.pdf.qrcode.ErrorCorrectionLevel;
 
 @Component
@@ -51,8 +47,8 @@ public class CreatePolicyPDF {
 
 	@Value("${value.pathfile.output}")
 	private String pathfileout;
-	@Value("${value.pathfile.template}")
-	private String templete;
+	//@Value("${value.pathfile.template}")
+	//private String templete;
 	@Value("${value.font}")
 	private String fontbase;	
 	
@@ -62,13 +58,13 @@ public class CreatePolicyPDF {
 		try {
 		
 
-			JSONObject path = (JSONObject) jsonObject.get("path");			
+			//JSONObject path = (JSONObject) jsonObject.get("path");			
 			JSONArray schedule = (JSONArray)jsonObject.get("schedule");
 			JSONObject detail = (JSONObject) jsonObject.get("detail");
 			
 			
-			String namefile = path.getString("namefile");		
-			String fileout = pathfileout + namefile;	
+			//String namefile = path.getString("namefile");		
+			//String fileout = pathfileout + namefile;	
 		
 
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -78,7 +74,7 @@ public class CreatePolicyPDF {
 			document.open();   
 
 			//Map<String, String> scheduleMap  =  mapDataArray(schedule);
-			
+
 			Map<String, String> detailMap  = mapDataObject(detail);
 
 			setForm(copy,schedule,detailMap);
@@ -140,35 +136,41 @@ public class CreatePolicyPDF {
 	protected void  setForm(PdfCopy copy, JSONArray scheduleMap, Map<String, String> detailMap) throws FileNotFoundException, IOException, DocumentException, JSONException {
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();		
-
-    	PdfReader reader = new PdfReader(new FileInputStream(templete));
-
-    	PdfStamper stamper = new PdfStamper(reader, baos);
-    	
-	    AcroFields fields = stamper.getAcroFields();		        	
-		fields.setGenerateAppearances(true);
-        stamper.setFormFlattening(true);
-            
-		setNameField(fields, stamper, detailMap);	
-  
-	    stamper.close();		  
-	    
-	    
-	    for(int i = 0; i < scheduleMap.length() ; i++) {
-	    	
-	    	JSONObject setDetail = new JSONObject();
+		for(int i = 0; i < scheduleMap.length() ; i++) {
+			JSONObject setDetail = new JSONObject();
     		setDetail = (JSONObject)scheduleMap.get(i);
-	    	int copyPage =  Integer.parseInt(setDetail.get("pageCopy").toString());
-	    
-	    	for(int j = 0; j < copyPage ; j++) {	    		  		
-	    		 
-		    	reader = new PdfReader(baos.toByteArray());
-		   	 	copy.addPage(copy.getImportedPage(reader,1)); // Choose page 
-		   	 	copy.freeReader(reader);
-		   	 	reader.close();        
-	        }     
-        }	   
-	    
+    		
+    		String templete = "d:\\WebServiceToWebService\\motor\\"+setDetail.get("formPage").toString()+".pdf";
+    		File ftmp = new File(templete);
+    		if(ftmp.exists() && !ftmp.isDirectory()) { 
+	    		   
+	    		
+		    	PdfReader reader = new PdfReader(new FileInputStream(templete));
+		
+		    	PdfStamper stamper = new PdfStamper(reader, baos);
+		    	
+			    AcroFields fields = stamper.getAcroFields();		        	
+				fields.setGenerateAppearances(true);
+		        stamper.setFormFlattening(true);
+		            
+				setNameField(fields, stamper, detailMap);	
+				Object[] keys = fields.getFields().keySet().toArray();
+				for(int f = 0;f < keys.length;f++) {
+					fields.removeField((String)keys[f]);
+				}
+			    stamper.close();		  
+		    	
+		    	int copyPage =  Integer.parseInt(setDetail.get("pageCopy").toString());
+		    	
+		    	for(int j = 0; j < copyPage ; j++) {	    		  		
+		    		 
+			    	reader = new PdfReader(baos.toByteArray());
+			   	 	copy.addPage(copy.getImportedPage(reader,1)); // Choose page 
+			   	 	copy.freeReader(reader);
+			   	 	reader.close();        
+		        }     
+	        }	   
+		}
     	baos.close();      	
      }
 	
@@ -183,7 +185,7 @@ public class CreatePolicyPDF {
 		while(iterator.hasNext()) {
 			String fieldName = iterator.next();
 //			String fieldValue = fields.getField(fieldName);
-			int fieldType = fields.getFieldType(fieldName);	
+//			int fieldType = fields.getFieldType(fieldName);	
 //			System.out.println(fieldName + "(" + fieldType + ") = " + fieldValue );
 //			fields.setField(fieldName,fieldName);
 			
@@ -191,17 +193,13 @@ public class CreatePolicyPDF {
 			//System.out.println(fieldType);
 			if (data.containsKey(fieldName)) {
 				
+				String[] sentences = fieldName.split("\\_");
 				
-				if(fieldType==1) {				
+				if(sentences[0].equals("img"))setImgField(fields, stamper, fieldName,data.get(fieldName));
+				else if(sentences[0].equals("barcode"))setBarcode(fields,stamper ,fieldName,data.get(fieldName)); //"barcode"
+				else if(sentences[0].equals("qrcode"))setQRCode(fields, stamper, fieldName,data.get(fieldName)); // qrcode
+				else {
 					
-					String[] sentences = fieldName.split("\\_");  		
-					System.out.println(sentences[0] + " "+ fieldName);
-					if(sentences[0].equals("img"))setImgField(fields, stamper, fieldName,data.get(fieldName));
-					else if(sentences[0].equals("barcode"))setBarcode(fields,stamper ,fieldName,data.get(fieldName)); //"barcode"
-					else if(sentences[0].equals("qrcode"))setQRCode(fields, stamper, fieldName,data.get(fieldName)); // qrcode
-			
-				}else if(fieldType==4) {
-				
 					Rectangle rect = fields.getFieldPositions(fieldName).get(0).position;		    	    
 					
 					PdfContentByte over = stamper.getOverContent(1);
@@ -209,7 +207,6 @@ public class CreatePolicyPDF {
 					over.setFontAndSize(font, 12);// set font and size
 					over.setColorFill(BaseColor.BLACK);// set color text
 
-					String[] sentences = fieldName.split("\\_");
 					if(sentences[0].equals("txtleft")) {						
 						over.showTextAligned(PdfContentByte.ALIGN_LEFT, data.get(fieldName), rect.getLeft(), rect.getBottom(), 0);	
 					}else if(sentences[0].equals("txtrigth")) {	
@@ -218,9 +215,13 @@ public class CreatePolicyPDF {
 						over.showTextAligned(PdfContentByte.ALIGN_CENTER, data.get(fieldName), rect.getLeft()+((rect.getWidth()/2)), rect.getBottom(), 0);			
 					}					
 					over.endText();	
-
-	    		}
+					
+				}
+			
+	    		
 			}
+			
+			
 		
 			/*
 			if(fieldType==1) {				
@@ -245,6 +246,8 @@ public class CreatePolicyPDF {
     		}
     		*/
 		}
+		
+		
 
      }
 	
@@ -297,8 +300,8 @@ public class CreatePolicyPDF {
 	    	    float left   = rect.getLeft();
 	    	    float width  = rect.getWidth();
 	    	    float height = rect.getHeight();
-	    		
-	    		Image img = Image.getInstance(value);  		
+	    	    Image img = Image.getInstance(barcode.createAwtImage(Color.BLACK, Color.WHITE), null, true);
+	    		 		
 	    		img.scaleAbsolute(width,height);
 
 	    		
