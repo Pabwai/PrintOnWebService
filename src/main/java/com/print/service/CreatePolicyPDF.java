@@ -83,7 +83,8 @@ public class CreatePolicyPDF {
 			Map<String, String> detailMap  = mapDataObject(detail);
 
 			setForm(copy,schedule,detailMap);
-			
+			AddCertificate cer = new AddCertificate();
+		    cer.AddCert(bos);
 		    //scheduleMap.clear();
 			document.close();
 		    copy.close();
@@ -119,6 +120,7 @@ public class CreatePolicyPDF {
 //		    }
 
 		    //System.out.println("AddTextOnPDF Complete");	    
+		    
 		    return setData;
 		
 		} catch (FileNotFoundException e) {
@@ -182,7 +184,7 @@ public class CreatePolicyPDF {
 	protected void setNameField(AcroFields fields, PdfStamper stamper, Map<String, String> data) throws IOException, DocumentException {
         // Set font size.
 		
-		final BaseFont font = BaseFont.createFont(fontbase, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
+		//final BaseFont font = BaseFont.createFont(fontbase, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
 		
 		Map<String, AcroFields.Item> map = new HashMap<String, AcroFields.Item>();
 		map = fields.getFields();
@@ -228,23 +230,20 @@ public class CreatePolicyPDF {
 						float fontsize = textField.getFontSize();  // Font Size
 						int txtalign = textField.getAlignment();   // Align Text
 						BaseColor bcolor = textField.getTextColor();
-						//font = textField.getFont(); // Font Base
+						BaseFont fontpdf = textField.getFont(); // Font Base
 						Rectangle rect = fields.getFieldPositions(fieldName).get(0).position;		    	    
 						//System.out.println(textField.getFont());
 						PdfContentByte over = stamper.getOverContent(1);
 						over.beginText();
-						over.setFontAndSize(font,fontsize);// set font and size
+						over.setFontAndSize(fontpdf,fontsize);// set font and size
 						over.setColorFill(bcolor);// set color text
 						
-						String test = "";
-						if(data.get(fieldName).equals(""))test = fieldName;
-						else test =  data.get(fieldName);
 						if(txtalign==0) {						
-							over.showTextAligned(PdfContentByte.ALIGN_LEFT, test, rect.getLeft(), rect.getBottom(), 0);	
+							over.showTextAligned(PdfContentByte.ALIGN_LEFT, data.get(fieldName), rect.getLeft(), rect.getBottom(), 0);	
 						}else if(txtalign==2) {	
-							over.showTextAligned(PdfContentByte.ALIGN_RIGHT, test, rect.getRight(), rect.getBottom(), 0);				
+							over.showTextAligned(PdfContentByte.ALIGN_RIGHT, data.get(fieldName), rect.getRight(), rect.getBottom(), 0);				
 						}else if(txtalign==1) {	
-							over.showTextAligned(PdfContentByte.ALIGN_CENTER, test, rect.getLeft()+((rect.getWidth()/2)), rect.getBottom(), 0);			
+							over.showTextAligned(PdfContentByte.ALIGN_CENTER, data.get(fieldName), rect.getLeft()+((rect.getWidth()/2)), rect.getBottom(), 0);			
 						}					
 						over.endText();	
 						
@@ -289,7 +288,7 @@ public class CreatePolicyPDF {
 		
 	    
 	    protected void setBarcode(AcroFields fields,PdfStamper stamper, String field,String value ) {  
-
+	    	value = value.replace(" ", "\n");
 	        Barcode128  barcode = new Barcode128();
 	        //barcode.setBaseline(-1); //text to top
 	        //final BaseFont font = BaseFont.createFont(fontbase1, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
@@ -310,7 +309,6 @@ public class CreatePolicyPDF {
 	    		 		
 	    		img.scaleAbsolute(width,height);
 
-	    		
 	    		img.setAbsolutePosition(left, rect.getBottom());
 	    		PdfContentByte canvas = stamper.getOverContent(1);
 	    		canvas.addImage(img);    
@@ -327,7 +325,7 @@ public class CreatePolicyPDF {
 	    }
 	    
 	    protected void setQRCode(AcroFields fields, PdfStamper stamper, String field,String value ) {  
-	    
+	    	value = value.replace(" ", "\n");
 	    	Map<EncodeHintType, Object> hashMap = new EnumMap<EncodeHintType, Object>(EncodeHintType.class); 
 	    	hashMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
 	    	hashMap.put(EncodeHintType.CHARACTER_SET, "UTF-8");	
