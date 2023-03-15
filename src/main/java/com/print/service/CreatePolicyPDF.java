@@ -13,6 +13,9 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.imageio.ImageIO;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -38,8 +41,10 @@ import com.itextpdf.text.pdf.Barcode128;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfCopy;
+import com.itextpdf.text.pdf.PdfDictionary;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
+import com.itextpdf.text.pdf.TextField;
 import com.itextpdf.text.pdf.qrcode.ErrorCorrectionLevel;
 
 @Component
@@ -140,7 +145,7 @@ public class CreatePolicyPDF {
 			JSONObject setDetail = new JSONObject();
     		setDetail = (JSONObject)scheduleMap.get(i);
     		
-    		String templete = "d:\\WebServiceToWebService\\motor\\"+setDetail.get("formPage").toString()+".pdf";
+    		String templete = "D:\\WebServiceToWebService\\motor\\"+setDetail.get("formPage").toString()+".pdf";
     		File ftmp = new File(templete);
     		if(ftmp.exists() && !ftmp.isDirectory()) { 
 	    		   
@@ -191,64 +196,65 @@ public class CreatePolicyPDF {
 			
 			
 			//System.out.println(fieldType);
-			if (data.containsKey(fieldName)) {
-				
-				String[] sentences = fieldName.split("\\_");
-				
-				if(sentences[0].equals("img"))setImgField(fields, stamper, fieldName,data.get(fieldName));
-				else if(sentences[0].equals("barcode"))setBarcode(fields,stamper ,fieldName,data.get(fieldName)); //"barcode"
-				else if(sentences[0].equals("qrcode"))setQRCode(fields, stamper, fieldName,data.get(fieldName)); // qrcode
-				else {
-					
-					Rectangle rect = fields.getFieldPositions(fieldName).get(0).position;		    	    
-					
-					PdfContentByte over = stamper.getOverContent(1);
-					over.beginText();
-					over.setFontAndSize(font, 12);// set font and size
-					over.setColorFill(BaseColor.BLACK);// set color text
+			for (Entry<String, String> dataValue : data.entrySet()) {	    		
 
-					if(sentences[0].equals("txtleft")) {						
-						over.showTextAligned(PdfContentByte.ALIGN_LEFT, data.get(fieldName), rect.getLeft(), rect.getBottom(), 0);	
-					}else if(sentences[0].equals("txtrigth")) {	
-						over.showTextAligned(PdfContentByte.ALIGN_RIGHT, data.get(fieldName), rect.getRight(), rect.getBottom(), 0);				
-					}else if(sentences[0].equals("txtcenter")) {	
-						over.showTextAligned(PdfContentByte.ALIGN_CENTER, data.get(fieldName), rect.getLeft()+((rect.getWidth()/2)), rect.getBottom(), 0);			
-					}					
-					over.endText();	
+				if (dataValue.getKey().equals(fieldName)) {
+					String[] sentences = fieldName.split("\\_");
 					
-				}
-			
-	    		
+					if(sentences[0].equals("img")) {
+						//System.out.println(sentences[0]);
+						if(sentences[1].equals("head"))setImgField(fields, stamper, fieldName,data.get(fieldName));
+						else if(sentences[1].equals("barcode"))setBarcode(fields,stamper ,fieldName,data.get(fieldName)); //"barcode"
+						else if(sentences[1].equals("qrcode"))setQRCode(fields, stamper, fieldName,data.get(fieldName)); // qrcode
+					}else if (sentences[0].equals("txt")) {
+						
+//
+//						PdfDictionary widgetDict = fields.getFieldItem(fieldName).getMerged(0);
+//						PdfNumber alignment = widgetDict.getAsNumber(PdfName.FF);
+//						System.out.println(fieldName);  
+//						System.out.println(alignment); 
+//	
+//						
+//						fields.setFieldProperty(fieldName, "bgcolor", Color.TRANSLUCENT, null);
+//		    	    	//fields.setFieldProperty(fieldName, "bordercolor", Color.TRANSLUCENT, null);
+//						fields.setFieldProperty(fieldName, "textfont", font, null);    	
+//		    	    	//fields.setFieldProperty(fieldName, "textsize", 12f, null);
+//		    	    	fields.setFieldProperty(fieldName, "fflags", PdfFormField.FLAGS_INVISIBLE, null);	
+
+						
+						PdfDictionary widgetDict = fields.getFieldItem(fieldName).getWidget(0);
+						TextField textField = new TextField(null, null, null);
+						fields.decodeGenericDictionary(widgetDict, textField);
+						float fontsize = textField.getFontSize();  // Font Size
+						int txtalign = textField.getAlignment();   // Align Text
+						BaseColor bcolor = textField.getTextColor();
+						//font = textField.getFont(); // Font Base
+						Rectangle rect = fields.getFieldPositions(fieldName).get(0).position;		    	    
+						//System.out.println(textField.getFont());
+						PdfContentByte over = stamper.getOverContent(1);
+						over.beginText();
+						over.setFontAndSize(font,fontsize);// set font and size
+						over.setColorFill(bcolor);// set color text
+						
+						String test = "";
+						if(data.get(fieldName).equals(""))test = fieldName;
+						else test =  data.get(fieldName);
+						if(txtalign==0) {						
+							over.showTextAligned(PdfContentByte.ALIGN_LEFT, test, rect.getLeft(), rect.getBottom(), 0);	
+						}else if(txtalign==2) {	
+							over.showTextAligned(PdfContentByte.ALIGN_RIGHT, test, rect.getRight(), rect.getBottom(), 0);				
+						}else if(txtalign==1) {	
+							over.showTextAligned(PdfContentByte.ALIGN_CENTER, test, rect.getLeft()+((rect.getWidth()/2)), rect.getBottom(), 0);			
+						}					
+						over.endText();	
+						
+					}
+
+				} 	
+							
 			}
 			
-			
-		
-			/*
-			if(fieldType==1) {				
-				
-				String[] sentences = fieldName.split("\\_");  		
-				//System.out.println(sentences[0] + " "+ fieldName);
-				if(sentences[0].equals("img"))setImgField(fields, stamper, fieldName, data.get(fieldName));
-				else if(sentences[0].equals("barcode"))setBarcode(fields, stamper, fieldName, data.get(fieldName)); //"barcode"
-				else if(sentences[0].equals("qrcode"))setQRCode(fields,fieldName, data.get(fieldName)); // qrcode
-		
-			}else if(fieldType==4) {
-				
-				//System.out.println(fieldName);
-				fields.setFieldProperty(fieldName, "textfont", font, null);    	
-    	    	fields.setFieldProperty(fieldName, "textsize", 12f, null);
-    	    	fields.setFieldProperty(fieldName, "fflags", PdfAnnotation.FLAGS_HIDDEN, null);	 
-    	    	fields.setFieldProperty(fieldName, "bgcolor", Color.TRANSLUCENT, null);
-    	    	fields.setFieldProperty(fieldName, "bordercolor", Color.TRANSLUCENT, null);
-    			fields.setField(fieldName,data.get(fieldName));
-			
-				
-    		}
-    		*/
 		}
-		
-		
-
      }
 	
 	
@@ -353,21 +359,22 @@ public class CreatePolicyPDF {
 				
 				//graphics.setComposite(AlphaComposite.SrcOver);
 				graphics.drawImage(qrImg, 0, 0, matrixWidth, matrixWidth, null);
-				//ByteArrayOutputStream bos = new ByteArrayOutputStream();
-				//ImageIO.write(qrImg, "gif", bos);
+				ByteArrayOutputStream bos = new ByteArrayOutputStream();
+				ImageIO.write(qrImg, "gif", bos);
 				
 				Rectangle rect = fields.getFieldPositions(field).get(0).position;
 	    	    float left   = rect.getLeft();
 	    	    float width  = rect.getWidth();
 	    	    float height = rect.getHeight();
 	    		
-	    		Image img = Image.getInstance(value);  		
+	    		Image img = Image.getInstance(bos.toByteArray());  		
 	    		img.scaleAbsolute(width,height);
-
+	    			
 	    		
 	    		img.setAbsolutePosition(left, rect.getBottom());
 	    		PdfContentByte canvas = stamper.getOverContent(1);
 	    		canvas.addImage(img);    
+	    		bos.close();
 				hashMap.clear();
 
 			} catch (BadElementException e) {
