@@ -1,6 +1,5 @@
 package com.print.service;
 
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -241,11 +240,11 @@ public class CreatePolicyPDF {
 						over.setColorFill(bcolor);// set color text
 						
 						if(txtalign==0) {						
-							over.showTextAligned(PdfContentByte.ALIGN_LEFT, data.get(fieldName), rect.getLeft(), rect.getBottom(), 0);	
+							over.showTextAligned(PdfContentByte.ALIGN_LEFT, data.get(fieldName)+"0", rect.getLeft(), rect.getBottom(), 0);	
 						}else if(txtalign==2) {	
-							over.showTextAligned(PdfContentByte.ALIGN_RIGHT, data.get(fieldName), rect.getRight(), rect.getBottom(), 0);				
+							over.showTextAligned(PdfContentByte.ALIGN_RIGHT, data.get(fieldName)+"2", rect.getRight(), rect.getBottom(), 0);				
 						}else if(txtalign==1) {	
-							over.showTextAligned(PdfContentByte.ALIGN_CENTER, data.get(fieldName), rect.getLeft()+((rect.getWidth()/2)), rect.getBottom(), 0);			
+							over.showTextAligned(PdfContentByte.ALIGN_CENTER, data.get(fieldName)+"1", rect.getLeft()+((rect.getWidth()/2)), rect.getBottom(), 0);			
 						}					
 						over.endText();	
 						
@@ -289,8 +288,8 @@ public class CreatePolicyPDF {
      }
 		
 	    
-	    protected void setBarcode(AcroFields fields,PdfStamper stamper, String field,String value ) {  
-	    	value = value.replace(" ", "\n");
+		protected void setBarcode(AcroFields fields,PdfStamper stamper, String field,String value ) {  
+			value = value.replace(" ", "\n");
 	        Barcode128  barcode = new Barcode128();
 	        //barcode.setBaseline(-1); //text to top
 	        //final BaseFont font = BaseFont.createFont(fontbase1, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
@@ -301,7 +300,7 @@ public class CreatePolicyPDF {
 	        //barcode.setFont(null);
 	        barcode.setCodeType(Barcode.CODE128);
 	        barcode.setCode(value);     
-
+	
 		    try {
 		    	Rectangle rect = fields.getFieldPositions(field).get(0).position;
 	    	    float left   = rect.getLeft();
@@ -310,7 +309,8 @@ public class CreatePolicyPDF {
 	    	    Image img = Image.getInstance(barcode.createAwtImage(Color.BLACK, Color.WHITE), null, true);
 	    		 		
 	    		img.scaleAbsolute(width,height);
-
+	
+	    		
 	    		img.setAbsolutePosition(left, rect.getBottom());
 	    		PdfContentByte canvas = stamper.getOverContent(1);
 	    		canvas.addImage(img);    
@@ -325,9 +325,8 @@ public class CreatePolicyPDF {
 			 
 	               
 	    }
-	    
-	    protected void setQRCode(AcroFields fields, PdfStamper stamper, String field,String value ) {  
-	    	value = value.replace(" ", "\n");
+		protected void setQRCode(AcroFields fields, PdfStamper stamper, String field,String value ) {  
+			value = value.replace(" ", "\n");
 	    	Map<EncodeHintType, Object> hashMap = new EnumMap<EncodeHintType, Object>(EncodeHintType.class); 
 	    	hashMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
 	    	hashMap.put(EncodeHintType.CHARACTER_SET, "UTF-8");	
@@ -336,7 +335,7 @@ public class CreatePolicyPDF {
 			try {				
 
 				QRCodeWriter barcodeWriter = new QRCodeWriter();
-	    	    BitMatrix bitMatrix =  barcodeWriter.encode(value, BarcodeFormat.QR_CODE, 200, 200,hashMap);
+	    	    BitMatrix bitMatrix =  barcodeWriter.encode(value, BarcodeFormat.QR_CODE, 400, 400,hashMap);
 	    	   
 				int matrixWidth = bitMatrix.getWidth();			
 				BufferedImage qrImg  = new BufferedImage(matrixWidth, matrixWidth, BufferedImage.TYPE_INT_RGB);
@@ -356,11 +355,12 @@ public class CreatePolicyPDF {
 						}
 					}
 				}
-				
 				//graphics.setComposite(AlphaComposite.SrcOver);
 				graphics.drawImage(qrImg, 0, 0, matrixWidth, matrixWidth, null);
 				ByteArrayOutputStream bos = new ByteArrayOutputStream();
-				ImageIO.write(qrImg, "gif", bos);
+
+		        ImageIO.write(qrImg, "png", bos);
+				
 				
 				Rectangle rect = fields.getFieldPositions(field).get(0).position;
 	    	    float left   = rect.getLeft();
