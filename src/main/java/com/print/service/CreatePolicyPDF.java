@@ -52,10 +52,12 @@ public class CreatePolicyPDF {
 
 	@Value("${value.pathfile.output}")
 	private String pathfileout;
-	//@Value("${value.pathfile.template}")
-	//private String templete;
+	@Value("${value.pathfile.template}")
+	private String pathTemplete;
 	@Value("${value.font}")
 	private String fontbase;	
+	
+
 	
 	
 	public byte[] setFilePDF(JSONObject jsonObject) {	 
@@ -83,8 +85,8 @@ public class CreatePolicyPDF {
 			Map<String, String> detailMap  = mapDataObject(detail);
 
 			setForm(copy,schedule,detailMap);
-			AddCertificate cer = new AddCertificate();
-		    cer.AddCert(bos);
+			//AddCertificate cer = new AddCertificate();
+		    //cer.AddCert(bos);
 		    //scheduleMap.clear();
 			document.close();
 		    copy.close();
@@ -147,7 +149,7 @@ public class CreatePolicyPDF {
 			JSONObject setDetail = new JSONObject();
     		setDetail = (JSONObject)scheduleMap.get(i);
     		
-    		String templete = "D:\\WebServiceToWebService\\motor\\"+setDetail.get("formPage").toString()+".pdf";
+    		String templete = pathTemplete+setDetail.get("formPage").toString()+".pdf";
     		File ftmp = new File(templete);
     		if(ftmp.exists() && !ftmp.isDirectory()) { 
 	    		   
