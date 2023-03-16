@@ -185,7 +185,7 @@ public class CreatePolicyPDF {
 	protected void setNameField(AcroFields fields, PdfStamper stamper, Map<String, String> data) throws IOException, DocumentException {
         // Set font size.
 		
-		//final BaseFont font = BaseFont.createFont(fontbase, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
+		final BaseFont font = BaseFont.createFont(fontbase, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
 		
 		Map<String, AcroFields.Item> map = new HashMap<String, AcroFields.Item>();
 		map = fields.getFields();
@@ -204,11 +204,16 @@ public class CreatePolicyPDF {
 				if (dataValue.getKey().equals(fieldName)) {
 					String[] sentences = fieldName.split("\\_");
 					
-					if(sentences[0].equals("img")) {
-						//System.out.println(sentences[0]);
-						if(sentences[1].equals("head"))setImgField(fields, stamper, fieldName,data.get(fieldName));
-						else if(sentences[1].equals("barcode"))setBarcode(fields,stamper ,fieldName,data.get(fieldName)); //"barcode"
-						else if(sentences[1].equals("qrcode"))setQRCode(fields, stamper, fieldName,data.get(fieldName)); // qrcode
+					if(sentences[0].equals("gen")) {
+						String name = "";
+						if(sentences[1].length()>=7) name = sentences[1].substring(0,7);
+						else if(sentences[1].length()<=6) name = sentences[1].substring(0,6);
+						
+						if(name.equals("barcode"))setBarcode(fields,stamper ,fieldName,data.get(fieldName)); //"barcode"
+						else if(name.equals("qrcode"))setQRCode(fields, stamper, fieldName,data.get(fieldName)); // qrcode
+					}
+					else if(sentences[0].equals("img")) {
+						setImgField(fields, stamper, fieldName,data.get(fieldName));
 					}else if (sentences[0].equals("txt")) {
 						
 //
@@ -231,20 +236,20 @@ public class CreatePolicyPDF {
 						float fontsize = textField.getFontSize();  // Font Size
 						int txtalign = textField.getAlignment();   // Align Text
 						BaseColor bcolor = textField.getTextColor();
-						BaseFont fontpdf = textField.getFont(); // Font Base
+						//BaseFont fontpdf = textField.getFont(); // Font Base
 						Rectangle rect = fields.getFieldPositions(fieldName).get(0).position;		    	    
 						//System.out.println(textField.getFont());
 						PdfContentByte over = stamper.getOverContent(1);
 						over.beginText();
-						over.setFontAndSize(fontpdf,fontsize);// set font and size
+						over.setFontAndSize(font,fontsize);// set font and size
 						over.setColorFill(bcolor);// set color text
 						
 						if(txtalign==0) {						
-							over.showTextAligned(PdfContentByte.ALIGN_LEFT, data.get(fieldName)+"0", rect.getLeft(), rect.getBottom(), 0);	
+							over.showTextAligned(PdfContentByte.ALIGN_LEFT, data.get(fieldName), rect.getLeft(), rect.getBottom(), 0);	
 						}else if(txtalign==2) {	
-							over.showTextAligned(PdfContentByte.ALIGN_RIGHT, data.get(fieldName)+"2", rect.getRight(), rect.getBottom(), 0);				
+							over.showTextAligned(PdfContentByte.ALIGN_RIGHT, data.get(fieldName), rect.getRight(), rect.getBottom(), 0);				
 						}else if(txtalign==1) {	
-							over.showTextAligned(PdfContentByte.ALIGN_CENTER, data.get(fieldName)+"1", rect.getLeft()+((rect.getWidth()/2)), rect.getBottom(), 0);			
+							over.showTextAligned(PdfContentByte.ALIGN_CENTER, data.get(fieldName), rect.getLeft()+((rect.getWidth()/2)), rect.getBottom(), 0);			
 						}					
 						over.endText();	
 						
