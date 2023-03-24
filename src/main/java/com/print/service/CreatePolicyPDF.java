@@ -27,6 +27,7 @@ import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import com.itextpdf.awt.DefaultFontMapper.BaseFontParameters;
 import com.itextpdf.text.BadElementException;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
@@ -185,7 +186,7 @@ public class CreatePolicyPDF {
 	protected void setNameField(AcroFields fields, PdfStamper stamper, Map<String, String> data) throws IOException, DocumentException {
         // Set font size.
 		
-		final BaseFont font = BaseFont.createFont(fontbase, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
+		BaseFont font = BaseFont.createFont(fontbase, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
 		
 		Map<String, AcroFields.Item> map = new HashMap<String, AcroFields.Item>();
 		map = fields.getFields();
@@ -237,6 +238,7 @@ public class CreatePolicyPDF {
 						int txtalign = textField.getAlignment();   // Align Text
 						BaseColor bcolor = textField.getTextColor();
 						//BaseFont fontpdf = textField.getFont(); // Font Base
+						//BaseFont fontpdf = BaseFont.createFont(textField.getFont().getPostscriptFontName(), BaseFont.WINANSI,BaseFont.EMBEDDED);
 						Rectangle rect = fields.getFieldPositions(fieldName).get(0).position;		    	    
 						//System.out.println(textField.getFont());
 						PdfContentByte over = stamper.getOverContent(1);
